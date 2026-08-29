@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Altitude Test</title>
+  <style>
+    :root { color-scheme: light dark; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, system-ui, Roboto, sans-serif;
+      margin: 0; padding: 1.2rem;
+      line-height: 1.35;
+      max-width: 34rem; margin-inline: auto;
+    }
+    h1 { font-size: 1.25rem; margin: 0 0 0.25rem; }
+    .sub { opacity: 0.7; font-size: 0.85rem; margin-bottom: 1rem; }
+    .verdict {
+      padding: 0.9rem 1rem; border-radius: 0.6rem;
+      font-weight: 600; font-size: 1rem; margin-bottom: 1.1rem;
+      border: 2px solid #8888;
+    }
+    .verdict.good { background: #1a7f3722; border-color: #1a7f37; }
+    .verdict.bad  { background: #b4232322; border-color: #b42323; }
+    .verdict.wait { background: #9a6a0022; border-color: #9a6a00; }
+    .big {
+      font-size: 2.4rem; font-weight: 700; font-variant-numeric: tabular-nums;
+      margin: 0.1rem 0;
+    }
+    .biglabel { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.6; }
+    .card { border: 1px solid #8884; border-radius: 0.6rem; padding: 0.9rem 1rem; margin-bottom: 0.9rem; }
+    table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+    td { padding: 0.35rem 0; border-bottom: 1px solid #8882; font-size: 0.95rem; }
+    td:first-child { opacity: 0.65; }
+    td:last-child { text-align: right; font-weight: 600; }
+    .null { color: #b42323; font-weight: 700; }
+    button {
+      font-size: 1rem; padding: 0.7rem 1.1rem; border-radius: 0.6rem;
+      border: 1px solid #8886; background: #8881; cursor: pointer;
+    }
+    footer { margin-top: 1rem; font-size: 0.8rem; opacity: 0.6; }
+    code { font-size: 0.85em; }
+  </style>
+</head>
+<body>
+  <h1>Altitude Test</h1>
+  <div class="sub">Checks whether this phone/browser reports altitude through the Geolocation API.</div>
+
+  <div id="verdict" class="verdict wait">Waiting for location permission…</div>
+
+  <div class="card">
+    <div class="biglabel">Elevation (above sea-level ellipsoid)</div>
+    <div class="big" id="elevFt">—</div>
+    <div class="biglabel" id="elevM">— m</div>
+  </div>
+
+  <div class="card">
+    <table>
+      <tr><td>Altitude (raw)</td><td id="altRaw">—</td></tr>
+      <tr><td>Altitude accuracy (±)</td><td id="altAcc">—</td></tr>
+      <tr><td>Horizontal accuracy (±)</td><td id="horAcc">—</td></tr>
+      <tr><td>Latitude</td><td id="lat">—</td></tr>
+      <tr><td>Longitude</td><td id="lng">—</td></tr>
+      <tr><td>Readings received</td><td id="count">0</td></tr>
+      <tr><td>Last update</td><td id="time">—</td></tr>
+    </table>
+  </div>
+
+  <button id="retry">Restart</button>
+
+  <footer>
+    Secure context (HTTPS): <code id="secure">?</code>.
+    If altitude shows <strong>NOT PROVIDED</strong>, this device doesn't expose
+    it to the browser; note which phone that was.
+  </footer>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    const M_TO_FT = 3.28084;
+    let watchId = null, count = 0, gotAltitudeOnce = false;
+
+    $('secure').textContent = window.isSecureContext ? 'yes' : 'NO (geolocation will be blocked)';
+
+    function setVerdict(cls, text) {
+      const v = $('verdict');
+      v.className = 'verdict ' + cls;
+      v.textContent = text;
+    }
+
+    function onPos(pos) {
+      count++;
+      const c = pos.coords;
+      $('count').textContent = count;
+      $('time').textContent = new Date(pos.timestamp).toLocaleTimeString();
+      $('lat').textContent = c.latitude.toFixed(6);
+      $('lng').textContent = c.longitude.toFixed(6);
+      $('horAcc').textContent = c.accuracy != null ? '± ' + c.accuracy.toFixed(0) + ' m' : '—';
+
+      if (c.altitude === null || c.altitude === undefined || Number.isNaN(c.altitude)) {
+        $('elevFt').textContent = '—';
+        $('elevM').textContent = '— m';
+        $('altRaw').innerHTML = '<span class="null">NOT PROVIDED</span>';
+        $('altAcc').textContent = '—';
+        if (!gotAltitudeOnce) {
+          setVerdict('bad', '✗ This device is NOT reporting altitude (null). Note the phone model.');
+        }
+      } else {
+        gotAltitudeOnce = true;
+        const ft = c.altitude * M_TO_FT;
+        $('elevFt').textContent = ft.toLocaleString(undefined, {maximumFractionDigits: 0}) + ' ft';
+        $('elevM').textContent = c.altitude.toFixed(1) + ' m';
+        $('altRaw').textContent = c.altitude.toFixed(1) + ' m';
+        $('altAcc').textContent = c.altitudeAccuracy != null
+          ? '± ' + c.altitudeAccuracy.toFixed(0) + ' m'
+          : 'null (unknown)';
+        setVerdict('good', '✓ Altitude is reported on this device. This phone works.');
+      }
+    }
+
+    function onErr(err) {
+      const msgs = {1: 'Permission denied', 2: 'Position unavailable', 3: 'Timeout'};
+      setVerdict('bad', '✗ Error: ' + (msgs[err.code] || err.code) + '. ' + err.message);
+    }
+
+    function start() {
+      count = 0; gotAltitudeOnce = false;
+      $('count').textContent = '0';
+      if (!('geolocation' in navigator)) {
+        setVerdict('bad', '✗ This browser has no Geolocation API at all.');
+        return;
+      }
+      if (!window.isSecureContext) {
+        setVerdict('bad', '✗ Not a secure context (HTTPS). Serve this over HTTPS.');
+        return;
+      }
+      setVerdict('wait', 'Requesting location… allow the permission prompt.');
+      if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+      watchId = navigator.geolocation.watchPosition(onPos, onErr, {
+        enableHighAccuracy: true,
+        maximumAge: 0,
+        timeout: 20000
+      });
+    }
+
+    $('retry').addEventListener('click', start);
+    start();
+  </script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+# macOS
+.DS_Store
+
+# Secrets / env (never commit)
+.env
+.env.*
+!.env.example
+
+# Planning / evaluation doc: kept in the working tree but not published to this
+# public repo (see the new-idea skill, Phase 3).
+IDEA.md
+
+# Node (if/when a toolchain is added)
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# Build output (future)
+dist/
+build/
+.cache/
