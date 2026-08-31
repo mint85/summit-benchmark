@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1a7f37">
+  <meta name="description" content="Offline-first PWA that shows your current elevation and logs it over time.">
+  <title>Summit Benchmark</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1>Summit Benchmark</h1>
+    <div class="sub">Current elevation, at a glance.</div>
+  </header>
+
+  <div id="status" class="status wait">Waiting for location permission…</div>
+
+  <main>
+    <section class="card readout">
+      <div class="biglabel">Elevation (above sea level)</div>
+      <div class="big" id="elevFt">—</div>
+      <div class="biglabel" id="elevM">— m</div>
+      <div class="accuracy" id="accuracy">± — ft</div>
+    </section>
+
+    <section class="card">
+      <table>
+        <tr><td>Latitude</td><td id="lat">—</td></tr>
+        <tr><td>Longitude</td><td id="lng">—</td></tr>
+        <tr><td>Horizontal accuracy</td><td id="horAcc">—</td></tr>
+        <tr><td>Readings received</td><td id="count">0</td></tr>
+        <tr><td>Last update</td><td id="time">—</td></tr>
+      </table>
+    </section>
+  </main>
+
+  <footer>
+    <span id="offline-badge" class="badge" hidden>offline</span>
+    <span id="sw-state">app shell not yet cached</span>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
