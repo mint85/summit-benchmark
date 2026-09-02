@@ -1,4 +1,4 @@
-// Summit Benchmark — app logic.
+// Summit Benchmark: app logic.
 // Live elevation readout via geolocation.watchPosition(), smoothed with a
 // rolling median, and corrected to sea level (MSL) by a calibration offset.
 //
@@ -20,6 +20,15 @@ const $ = id => document.getElementById(id);
 const M_TO_FT = 3.28084;
 const SMOOTHING_SAMPLES = 5; // rolling-median window; damps GPS altitude jitter
 const CAL_KEY = 'summit.calibration';
+
+// Coarse altitude-sickness cue. Real AMS risk depends on ascent rate and
+// sleeping altitude, not just where you're standing, so this is an at-a-glance
+// band, not medical advice. Highest matching band wins; below 8,000 ft: none.
+const BANDS = [
+  { min: 12000, cls: 'extreme', text: 'Extreme altitude. Descend if you feel unwell.' },
+  { min: 10000, cls: 'high',    text: 'Above 10,000 ft: take it easy, watch for altitude sickness.' },
+  { min: 8000,  cls: 'caution', text: 'High altitude: hydrate and pace yourself.' }
+];
 
 let watchId = null;
 let count = 0;
@@ -95,11 +104,22 @@ function resetCalibration() {
 function renderElevation() {
   if (!lastFix) return;
   const elevM = correctedM(lastFix.rawM);
-  $('elevFt').textContent = Math.round(elevM * M_TO_FT).toLocaleString() + ' ft';
+  const elevFt = elevM * M_TO_FT;
+  $('elevFt').textContent = Math.round(elevFt).toLocaleString() + ' ft';
   $('elevM').textContent = elevM.toFixed(1) + ' m';
   $('accuracy').textContent = lastFix.accM != null
     ? '± ' + Math.round(lastFix.accM * M_TO_FT) + ' ft'
     : 'accuracy unknown';
+  renderBand(elevFt);
+}
+
+function renderBand(elevFt) {
+  const el = $('band');
+  const band = BANDS.find(b => elevFt >= b.min);
+  if (!band) { el.hidden = true; el.className = 'band'; return; }
+  el.hidden = false;
+  el.className = 'band ' + band.cls;
+  el.textContent = band.text;
 }
 
 function renderCalState() {
@@ -110,7 +130,7 @@ function renderCalState() {
     state.classList.add('on');
     $('calReset').hidden = false;
   } else {
-    state.textContent = 'Uncalibrated — showing raw GPS';
+    state.textContent = 'Uncalibrated: showing raw GPS';
     state.classList.remove('on');
     $('calReset').hidden = true;
   }
@@ -137,6 +157,7 @@ function onPosition(pos) {
     $('elevFt').textContent = '—';
     $('elevM').textContent = 'altitude not provided';
     $('accuracy').textContent = '';
+    $('band').hidden = true;
     setStatus('bad', '✗ This device is not reporting altitude.');
     return;
   }

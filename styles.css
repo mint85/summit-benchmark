@@ -83,6 +83,18 @@ button.primary { background: var(--accent); border-color: var(--accent); color: 
   text-decoration: underline; cursor: pointer;
 }
 
+.band {
+  margin-top: 0.7rem;
+  padding: 0.5rem 0.8rem;
+  border-radius: 0.6rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border: 1px solid #8888;
+}
+.band.caution { background: #9a6a0022; border-color: var(--warn); }
+.band.high    { background: #b4560022; border-color: #b45600; }
+.band.extreme { background: #b4232322; border-color: var(--bad); }
+
 table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
 td { padding: 0.35rem 0; border-bottom: 1px solid #8882; font-size: 0.95rem; }
 td:first-child { opacity: 0.65; }
