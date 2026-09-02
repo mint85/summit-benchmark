@@ -110,7 +110,7 @@ function renderElevation() {
   $('elevM').textContent = elevM.toFixed(1) + ' m';
   $('accuracy').textContent = lastFix.accM != null
     ? '± ' + Math.round(lastFix.accM * M_TO_FT) + ' ft'
-    : 'accuracy unknown';
+    : 'vertical accuracy not reported (normal on Android)';
   renderBand(elevFt);
 }
 
@@ -152,6 +152,10 @@ function onPosition(pos) {
   $('lat').textContent = c.latitude.toFixed(6);
   $('lng').textContent = c.longitude.toFixed(6);
   $('horAcc').textContent = c.accuracy != null ? '± ' + Math.round(c.accuracy) + ' m' : '—';
+  // Raw diagnostic value; Android reports null here (see the readout note).
+  $('altAcc').textContent = c.altitudeAccuracy != null
+    ? '± ' + Math.round(c.altitudeAccuracy) + ' m'
+    : 'null';
 
   if (c.altitude == null || Number.isNaN(c.altitude)) {
     lastFix = null;
