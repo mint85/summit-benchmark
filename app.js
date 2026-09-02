@@ -15,6 +15,7 @@
 // at once. US coverage only; needs a connection (so: park entrance, visitor
 // center, or the hotel the night before).
 const EPQS_URL = 'https://epqs.nationalmap.gov/v1/json';
+const EPQS_TIMEOUT_MS = 30000; // EPQS is authoritative but often slow (10-30 s)
 
 const $ = id => document.getElementById(id);
 const M_TO_FT = 3.28084;
@@ -209,9 +210,9 @@ async function calibrateUsgs() {
   const label = btn.textContent;
   btn.disabled = true;
   btn.textContent = 'Checking USGS…';
-  setCalMsg('');
+  setCalMsg('Querying USGS ground truth. This can take up to 30 seconds.');
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 10000);
+  const timer = setTimeout(() => ctrl.abort(), EPQS_TIMEOUT_MS);
   try {
     const url = EPQS_URL + '?x=' + lastFix.lng + '&y=' + lastFix.lat
       + '&units=Meters&wkid=4326&includeDate=false';
@@ -225,8 +226,10 @@ async function calibrateUsgs() {
     setCalMsg('Calibrated against USGS ground truth ('
       + Math.round(groundM * M_TO_FT).toLocaleString() + ' ft).');
   } catch (e) {
-    const why = e.name === 'AbortError' ? 'timed out' : e.message;
-    setCalMsg('USGS lookup failed (' + why + '). Try again, or enter a known elevation.');
+    const why = e.name === 'AbortError'
+      ? 'USGS was too slow to respond'
+      : 'USGS lookup failed (' + e.message + ')';
+    setCalMsg(why + '. Try again, or enter a known elevation.');
   } finally {
     clearTimeout(timer);
     btn.disabled = false;
