@@ -23,8 +23,22 @@ feature, which uses exactly that idea.
 
 ## Status
 
-Early build. Planned architecture: vanilla JS with no build step, a service worker
-for offline use, uPlot for charting, and IndexedDB for the elevation log.
+Working PWA, deployed and installable at **https://summit-benchmark.netlify.app**.
+
+Built so far:
+
+- App shell that installs to the home screen and runs offline (service worker,
+  network-first so a new deploy reaches installed devices without a stale-cache lag).
+- Live elevation readout from `navigator.geolocation.watchPosition()`, smoothed with
+  a rolling median so it does not flicker while you stand still.
+- Sea-level calibration in two modes: a one-tap lookup against USGS ground truth
+  (EPQS) when online, or a hand-entered known elevation offline. The offset persists
+  in `localStorage` and one calibration holds across a region.
+- A coarse altitude-sickness band cue that flags the high, very high, and extreme
+  bands as you climb.
+
+Still to come: logging each reading to IndexedDB with start/stop sessions, and
+charting a day's elevation with uPlot.
 
 ## Device compatibility test
 
@@ -60,16 +74,21 @@ between them is not GPS noise; it is a **reference-frame difference**:
   about 30 m (100 ft) below sea level at this latitude. That offset is the *geoid
   separation*.
 
-So the real build normalizes everything to sea level: use the iOS number as-is, add a
-geoid correction on Android, and offer an optional "calibrate here" button to absorb
-any residual offset. (One more note: Android returns `null` for *altitude accuracy*
-even when altitude itself is fine, which is cosmetic only.)
+So the real build normalizes everything to sea level through calibration. Because the
+geoid separation varies by location (the roughly 32 m offset measured here is smaller
+out in the mountain west), a single bundled correction would be wrong at the
+destination. Instead the app calibrates against a known elevation: a one-tap lookup
+against USGS ground truth when online, or a hand-entered value offline. That cancels
+geoid separation and device bias in one step, and one calibration holds across a whole
+region. (One more note: Android returns `null` for *altitude accuracy* even when
+altitude itself is fine, which is cosmetic only.)
 
-## Tech (planned)
+## Tech
 
-Vanilla JS, no framework, no build step. Static site (deploys free to Netlify or
-GitHub Pages, both of which provide the HTTPS a PWA requires). Service worker for
-offline, IndexedDB for the elevation log, and a small vendored charting library
+Vanilla JS, no framework, no build step. Static site on Netlify, which provides the
+HTTPS a PWA requires and lets us set cache headers (GitHub Pages would also work).
+The service worker handles offline use, and calibration state lives in `localStorage`.
+Still to add: IndexedDB for the elevation log and a small vendored charting library
 (uPlot) for the graphs.
 
 ---
