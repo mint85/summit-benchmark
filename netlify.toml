@@ -1,0 +1,13 @@
+# Netlify deploy config for Summit Benchmark (static site, no build step).
+# Served straight from the repo root.
+[build]
+  publish = "."
+
+# Never serve the service worker script from a stale edge/browser cache.
+# The browser checks sw.js for changes to decide whether to update the app;
+# if a CDN hands back an old copy, devices keep running the previous version
+# after a deploy. no-cache forces a revalidation every time.
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"
