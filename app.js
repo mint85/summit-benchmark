@@ -5,9 +5,16 @@
 // Correction is calibration-based (Design B): the raw GPS altitude is in the
 // device's native frame (iOS ≈ MSL, Android = raw ellipsoidal, ~30 m low), and
 // geoid separation varies by location, so rather than bundle a fragile per-
-// region table we let the user calibrate against a known elevation. One
-// calibration holds across a whole region/day. Later phases add USGS auto-
-// calibration, IndexedDB logging, and the uPlot chart.
+// region table we let the user calibrate against a known elevation, either a
+// USGS ground-truth lookup when online or a hand-entered value. One calibration
+// holds across a whole region/day. Later phases add IndexedDB logging and the
+// uPlot chart.
+
+// USGS EPQS returns orthometric (NAVD88 / sea-level) elevation, the same frame
+// as trail signs, so an offset from it cancels geoid separation and device bias
+// at once. US coverage only; needs a connection (so: park entrance, visitor
+// center, or the hotel the night before).
+const EPQS_URL = 'https://epqs.nationalmap.gov/v1/json';
 
 const $ = id => document.getElementById(id);
 const M_TO_FT = 3.28084;
@@ -170,7 +177,45 @@ function start() {
   });
 }
 
+// Calibrate against USGS ground truth at the current location (online only).
+async function calibrateUsgs() {
+  if (!lastFix) { setCalMsg('Wait for a GPS fix before calibrating.'); return; }
+  if (!navigator.onLine) {
+    setCalMsg('No connection. Use "Enter known elevation" instead.');
+    return;
+  }
+  const btn = $('calUsgs');
+  const label = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Checking USGS…';
+  setCalMsg('');
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 10000);
+  try {
+    const url = EPQS_URL + '?x=' + lastFix.lng + '&y=' + lastFix.lat
+      + '&units=Meters&wkid=4326&includeDate=false';
+    const res = await fetch(url, { signal: ctrl.signal });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    const groundM = parseFloat(data && data.value);
+    // EPQS returns a large negative sentinel for points with no elevation data.
+    if (!isFinite(groundM) || groundM < -900000) throw new Error('no data here');
+    applyCalibration(groundM, 'USGS');
+    setCalMsg('Calibrated against USGS ground truth ('
+      + Math.round(groundM * M_TO_FT).toLocaleString() + ' ft).');
+  } catch (e) {
+    const why = e.name === 'AbortError' ? 'timed out' : e.message;
+    setCalMsg('USGS lookup failed (' + why + '). Try again, or enter a known elevation.');
+  } finally {
+    clearTimeout(timer);
+    btn.disabled = false;
+    btn.textContent = label;
+  }
+}
+
 // --- Calibration UI wiring ---
+$('calUsgs').addEventListener('click', calibrateUsgs);
+
 $('calManualToggle').addEventListener('click', () => {
   const row = $('calManualRow');
   row.hidden = !row.hidden;

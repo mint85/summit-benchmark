@@ -61,6 +61,8 @@ button {
   cursor: pointer;
 }
 button:active { background: #8883; }
+button:disabled { opacity: 0.55; cursor: default; }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
 .cal-head { display: flex; justify-content: space-between; align-items: baseline; }
 .cal-state { font-size: 0.95rem; font-weight: 600; margin: 0.3rem 0 0.7rem; }
 .cal-state.on { color: var(--accent); }
