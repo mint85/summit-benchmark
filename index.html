@@ -29,6 +29,23 @@
       <div class="accuracy" id="accuracy">± — ft</div>
     </section>
 
+    <section class="card calibrate">
+      <div class="cal-head">
+        <span class="biglabel">Calibration</span>
+        <button id="calReset" class="link-btn" hidden>Reset</button>
+      </div>
+      <div id="calState" class="cal-state">Uncalibrated — showing raw GPS</div>
+      <div class="cal-actions">
+        <button id="calManualToggle">Enter known elevation</button>
+      </div>
+      <div id="calManualRow" class="cal-manual" hidden>
+        <input id="calManualInput" type="number" inputmode="decimal" step="1"
+               placeholder="Known elevation (ft)" aria-label="Known elevation in feet">
+        <button id="calManualApply">Apply</button>
+      </div>
+      <div id="calMsg" class="cal-msg" role="status" aria-live="polite"></div>
+    </section>
+
     <section class="card">
       <table>
         <tr><td>Latitude</td><td id="lat">—</td></tr>

@@ -5,6 +5,7 @@
   --bad: #b42323;
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 body {
   font-family: -apple-system, system-ui, Roboto, sans-serif;
   margin: 0;
@@ -48,6 +49,37 @@ header h1 { font-size: 1.25rem; margin: 0 0 0.25rem; }
   opacity: 0.6;
 }
 .accuracy { margin-top: 0.4rem; font-size: 0.9rem; opacity: 0.7; font-variant-numeric: tabular-nums; }
+
+/* Calibration */
+button {
+  font: inherit;
+  padding: 0.6rem 0.9rem;
+  border-radius: 0.6rem;
+  border: 1px solid #8886;
+  background: #8881;
+  color: inherit;
+  cursor: pointer;
+}
+button:active { background: #8883; }
+.cal-head { display: flex; justify-content: space-between; align-items: baseline; }
+.cal-state { font-size: 0.95rem; font-weight: 600; margin: 0.3rem 0 0.7rem; }
+.cal-state.on { color: var(--accent); }
+.cal-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.cal-manual { display: flex; gap: 0.5rem; margin-top: 0.6rem; }
+.cal-manual input {
+  flex: 1; min-width: 0;
+  font: inherit; color: inherit;
+  padding: 0.6rem 0.7rem;
+  border-radius: 0.6rem;
+  border: 1px solid #8886;
+  background: transparent;
+}
+.cal-msg { font-size: 0.85rem; opacity: 0.75; margin-top: 0.5rem; min-height: 1em; }
+.link-btn {
+  border: none; background: none; padding: 0.2rem 0.3rem;
+  color: inherit; opacity: 0.7;
+  text-decoration: underline; cursor: pointer;
+}
 
 table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
 td { padding: 0.35rem 0; border-bottom: 1px solid #8882; font-size: 0.95rem; }
