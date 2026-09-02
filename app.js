@@ -5,9 +5,21 @@
 
 const $ = id => document.getElementById(id);
 const M_TO_FT = 3.28084;
+const SMOOTHING_SAMPLES = 5; // rolling-median window; damps GPS altitude jitter
 
 let watchId = null;
 let count = 0;
+let altSamples = []; // recent raw altitudes (m), newest last
+
+// Median is robust to the occasional wild GPS altitude spike in a way a mean
+// is not. With a constant correction offset (added later), median(raw) + offset
+// equals median(corrected), so smoothing here composes cleanly with Phase 2's
+// geoid/calibration correction.
+function median(values) {
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+}
 
 function setStatus(cls, text) {
   const el = $('status');
@@ -36,9 +48,13 @@ function onPosition(pos) {
     return;
   }
 
-  const ft = c.altitude * M_TO_FT;
+  altSamples.push(c.altitude);
+  if (altSamples.length > SMOOTHING_SAMPLES) altSamples.shift();
+  const elevM = median(altSamples);
+
+  const ft = elevM * M_TO_FT;
   $('elevFt').textContent = Math.round(ft).toLocaleString() + ' ft';
-  $('elevM').textContent = c.altitude.toFixed(1) + ' m';
+  $('elevM').textContent = elevM.toFixed(1) + ' m';
   $('accuracy').textContent = c.altitudeAccuracy != null
     ? '± ' + Math.round(c.altitudeAccuracy * M_TO_FT) + ' ft'
     : 'accuracy unknown';
