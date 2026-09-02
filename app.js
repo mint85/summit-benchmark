@@ -173,7 +173,8 @@ function onPosition(pos) {
   };
 
   renderElevation();
-  setStatus('good', '✓ Live fix.');
+  const acc = c.accuracy != null ? ' (±' + Math.round(c.accuracy) + ' m)' : '';
+  setStatus('good', '✓ Live GPS fix' + acc + ', updating continuously.');
 }
 
 function onError(err) {
