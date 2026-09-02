@@ -210,7 +210,15 @@ async function calibrateUsgs() {
   const btn = $('calUsgs');
   const label = btn.textContent;
   btn.disabled = true;
-  btn.textContent = 'Checking USGS…';
+
+  // Live elapsed-seconds counter so a slow EPQS call feels responsive.
+  const started = Date.now();
+  const tick = () => {
+    btn.textContent = 'Checking USGS… ' + Math.floor((Date.now() - started) / 1000) + 's';
+  };
+  tick();
+  const ticker = setInterval(tick, 250);
+
   setCalMsg('Querying USGS ground truth. This can take up to 30 seconds.');
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), EPQS_TIMEOUT_MS);
@@ -233,6 +241,7 @@ async function calibrateUsgs() {
     setCalMsg(why + '. Try again, or enter a known elevation.');
   } finally {
     clearTimeout(timer);
+    clearInterval(ticker);
     btn.disabled = false;
     btn.textContent = label;
   }
