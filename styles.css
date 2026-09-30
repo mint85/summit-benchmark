@@ -149,9 +149,11 @@ button.stop { background: var(--bad); border-color: var(--bad); color: #fff; }
 }
 .pocket-unlock {
   position: absolute;
-  top: 50%;
+  /* Ring center sits low on the screen, near where a thumb rests (and
+     roughly where the S25 Ultra's fingerprint reader is). 80px = ring radius. */
+  top: calc(78% - 80px);
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translateX(-50%);
   text-align: center;
   font-size: 0.9rem;
   white-space: nowrap;
@@ -169,7 +171,7 @@ button.stop { background: var(--bad); border-color: var(--bad); color: #fff; }
   width: 160px; height: 160px;
   margin: 0 auto 0.9rem;
   border-radius: 50%;
-  background: conic-gradient(#b0b0b0 calc(var(--progress) * 1%), #333 0);
+  background: conic-gradient(var(--accent) calc(var(--progress) * 1%), #333 0);
 }
 .pocket-ring::after {
   content: '';
