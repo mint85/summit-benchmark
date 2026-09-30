@@ -90,6 +90,22 @@ button.primary { background: var(--accent); border-color: var(--accent); color: 
   text-decoration: underline; cursor: pointer;
 }
 
+/* Elevation log */
+.log-state { font-size: 0.85rem; font-weight: 600; opacity: 0.6; }
+.log-state.on { color: var(--bad); opacity: 1; }
+.log-state.on::before {
+  content: '';
+  display: inline-block;
+  width: 0.55em; height: 0.55em;
+  margin-right: 0.35em;
+  border-radius: 50%;
+  background: currentColor;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+@keyframes pulse { 50% { opacity: 0.25; } }
+.log-detail { font-size: 0.9rem; opacity: 0.75; margin: 0.3rem 0 0.7rem; font-variant-numeric: tabular-nums; }
+button.stop { background: var(--bad); border-color: var(--bad); color: #fff; }
+
 .band {
   margin-top: 0.7rem;
   padding: 0.5rem 0.8rem;

@@ -33,6 +33,16 @@
       <div id="band" class="band" hidden></div>
     </section>
 
+    <section class="card log">
+      <div class="cal-head">
+        <span class="biglabel">Elevation log</span>
+        <span id="logState" class="log-state">Not logging</span>
+      </div>
+      <div id="logDetail" class="log-detail">Saves a reading every 15 seconds while the app is open.</div>
+      <button id="logToggle" class="primary">Start logging</button>
+      <div id="logMsg" class="cal-msg" role="status" aria-live="polite"></div>
+    </section>
+
     <section class="card calibrate">
       <div class="cal-head">
         <span class="biglabel">Calibration</span>
@@ -68,6 +78,7 @@
     <span id="sw-state">app shell not yet cached</span>
   </footer>
 
+  <script src="db.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

@@ -7,8 +7,10 @@
 // geoid separation varies by location, so rather than bundle a fragile per-
 // region table we let the user calibrate against a known elevation, either a
 // USGS ground-truth lookup when online or a hand-entered value. One calibration
-// holds across a whole region/day. Later phases add IndexedDB logging and the
-// uPlot chart.
+// holds across a whole region/day.
+//
+// Logging: while a session is active, a reading is saved to IndexedDB (db.js)
+// at most every LOG_INTERVAL_MS. A later phase adds the uPlot chart.
 
 // USGS EPQS returns orthometric (NAVD88 / sea-level) elevation, the same frame
 // as trail signs, so an offset from it cancels geoid separation and device bias
@@ -21,6 +23,7 @@ const $ = id => document.getElementById(id);
 const M_TO_FT = 3.28084;
 const SMOOTHING_SAMPLES = 5; // rolling-median window; damps GPS altitude jitter
 const CAL_KEY = 'summit.calibration';
+const LOG_INTERVAL_MS = 15000; // one saved reading per 15 s keeps a full day small
 
 // Coarse altitude-sickness cue. Real AMS risk depends on ascent rate and
 // sleeping altitude, not just where you're standing, so this is an at-a-glance
@@ -36,6 +39,9 @@ let count = 0;
 let altSamples = [];  // recent raw altitudes (m), newest last
 let lastFix = null;   // { rawM, accM, lat, lng } from the most recent good reading
 let calibration = null; // { offsetM, source, ts } or null when uncalibrated
+let session = null;     // active log session from db.js, or null when not logging
+let savedCount = 0;     // readings saved in the active session
+let lastLoggedT = 0;    // timestamp of the last fix written (throttle)
 
 // Median is robust to the occasional wild GPS altitude spike in a way a mean is
 // not. A constant offset commutes with the median, so smoothing the raw reading
@@ -177,6 +183,7 @@ function onPosition(pos) {
   };
 
   renderElevation();
+  logReading(pos);
   const acc = c.accuracy != null ? ' (±' + Math.round(c.accuracy) + ' m)' : '';
   setStatus('good', '✓ Live GPS fix' + acc + ', updating continuously.');
 }
@@ -251,6 +258,111 @@ async function calibrateUsgs() {
   }
 }
 
+// --- Elevation log (sessions + throttled capture) ---
+function setLogMsg(text) {
+  $('logMsg').textContent = text || '';
+}
+
+function renderLog() {
+  const state = $('logState');
+  const btn = $('logToggle');
+  if (session) {
+    state.textContent = 'Logging';
+    state.classList.add('on');
+    $('logDetail').textContent = savedCount + (savedCount === 1 ? ' reading' : ' readings')
+      + ' saved since ' + new Date(session.startedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    btn.textContent = 'Stop logging';
+    btn.className = 'stop';
+  } else {
+    state.textContent = 'Not logging';
+    state.classList.remove('on');
+    $('logDetail').textContent = 'Saves a reading every 15 seconds while the app is open.';
+    btn.textContent = 'Start logging';
+    btn.className = 'primary';
+  }
+}
+
+// Called on every fix. The throttle lives here, keyed on the fix's own
+// timestamp, rather than in a timer: a timer would keep re-saving a stale
+// lastFix when GPS stalls, faking a flat line. This way every saved row is a
+// real, fresh fix, and a stall shows up as an honest gap.
+function logReading(pos) {
+  if (!session || !lastFix) return;
+  if (pos.timestamp - lastLoggedT < LOG_INTERVAL_MS) return;
+  lastLoggedT = pos.timestamp;
+  const sessionId = session.id;
+  SummitDB.addReading({
+    sessionId,
+    t: pos.timestamp,
+    altM: lastFix.rawM,
+    offsetM: calibration ? calibration.offsetM : null,
+    vAccM: lastFix.accM,
+    hAccM: pos.coords.accuracy,
+    lat: lastFix.lat,
+    lng: lastFix.lng
+  }).then(() => {
+    if (!session || session.id !== sessionId) return; // stopped meanwhile
+    savedCount++;
+    renderLog();
+  }).catch(err => {
+    console.error('Saving reading failed:', err);
+    setLogMsg('Could not save a reading (' + err.message + '). Still trying.');
+  });
+}
+
+async function toggleLog() {
+  const btn = $('logToggle');
+  btn.disabled = true;
+  try {
+    if (session) {
+      const count = savedCount;
+      await SummitDB.endSession(session.id);
+      session = null;
+      setLogMsg('Session saved with ' + count + (count === 1 ? ' reading.' : ' readings.'));
+    } else {
+      session = await SummitDB.startSession();
+      savedCount = 0;
+      lastLoggedT = 0; // save on the very next fix
+      setLogMsg('');
+      // Ask the browser not to evict the log under storage pressure. Home
+      // screen apps on iOS are already exempt from WebKit's 7-day cap.
+      if (navigator.storage && navigator.storage.persist) {
+        navigator.storage.persist().catch(() => {});
+      }
+    }
+  } catch (err) {
+    console.error('Log toggle failed:', err);
+    setLogMsg('Storage error: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    renderLog();
+  }
+}
+
+// Resume a session left running when the app was closed or killed.
+async function initLog() {
+  if (!('indexedDB' in window)) {
+    $('logToggle').disabled = true;
+    setLogMsg('This browser has no IndexedDB, so logging is unavailable.');
+    return;
+  }
+  try {
+    const active = await SummitDB.getActiveSession();
+    if (active) {
+      savedCount = await SummitDB.countReadings(active.id);
+      session = active;
+      setLogMsg('Resumed the session that was running.');
+    }
+  } catch (err) {
+    console.error('Opening the log failed:', err);
+    $('logToggle').disabled = true;
+    setLogMsg('Logging unavailable: storage could not be opened (private browsing?).');
+  }
+  renderLog();
+}
+
+$('logToggle').addEventListener('click', toggleLog);
+
 // --- Calibration UI wiring ---
 $('calUsgs').addEventListener('click', calibrateUsgs);
 
@@ -297,4 +409,5 @@ if ('serviceWorker' in navigator) {
 
 loadCalibration();
 renderCalState();
+initLog();
 start();
