@@ -461,6 +461,7 @@ function holdFrameTick(now) {
     return;
   }
   holdFrame = null;
+  hapticTick();
   exitPocket();
 }
 
@@ -480,6 +481,26 @@ function cancelHold() {
   if (holdFrame === null) return;
   stopHold();
   showUnlockHint();
+}
+
+// Short buzz when pocket mode unlocks. Android has the Vibration API; iOS
+// Safari does not, but toggling an <input type="checkbox" switch> (Safari
+// 17.4+) fires the system haptic, so fall back to clicking a hidden one. The
+// iOS path is a known workaround rather than an API.
+function hapticTick() {
+  if (navigator.vibrate) {
+    navigator.vibrate(40);
+    return;
+  }
+  const label = document.createElement('label');
+  const input = document.createElement('input');
+  input.type = 'checkbox';
+  input.setAttribute('switch', '');
+  label.appendChild(input);
+  label.style.display = 'none';
+  document.body.appendChild(label);
+  label.click();
+  label.remove();
 }
 
 $('pocketBtn').addEventListener('click', enterPocket);
