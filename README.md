@@ -40,13 +40,16 @@ Built so far:
   IndexedDB on the device. Each reading keeps the raw altitude plus the calibration
   offset in effect, so a later recalibration loses nothing. A session left running
   when the app is closed resumes on the next open.
+- Pocket mode for continuous logging. A web app cannot use GPS in the background:
+  when the screen locks or you switch apps, the phone suspends the page and logging
+  pauses. Pocket mode holds a screen Wake Lock and covers the app with a black
+  overlay that ignores touches, so the phone can ride in a pocket and keep logging.
+  On an OLED screen black pixels are off, so the display itself costs little.
+  Unlocking takes two steps (tap, then hold a circle for 2 seconds) so pocket
+  contact cannot trigger it.
 
-Still to come: a keep-awake "pocket mode" for continuous logging, charting a
-session's elevation with uPlot, and JSON/CSV export and import.
-
-One platform limit worth knowing: a web app cannot use GPS in the background. When
-the screen locks or you switch apps, the phone suspends the page and logging pauses
-until you come back, so a session records the stretches when the app is open.
+Still to come: charting a session's elevation with uPlot, and JSON/CSV export and
+import.
 
 ## Device compatibility test
 
