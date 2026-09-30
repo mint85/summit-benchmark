@@ -378,7 +378,8 @@ const DRIFT_MS = 60000;       // move the dim text so it can't burn in
 let pocketOn = false;
 let wakeLock = null;          // WakeLockSentinel while held
 let wakeLockPending = false;
-let holdTimer = null;
+let holdFrame = null;         // requestAnimationFrame id while the ring is held
+let holdStart = 0;
 let hintTimer = null;
 let driftTimer = null;
 
@@ -429,8 +430,7 @@ function enterPocket() {
 function exitPocket() {
   pocketOn = false;
   $('pocket').hidden = true;
-  $('pocketRing').classList.remove('holding');
-  clearTimeout(holdTimer);
+  stopHold();
   clearTimeout(hintTimer);
   clearInterval(driftTimer);
   if (wakeLock) wakeLock.release().catch(() => {});
@@ -450,11 +450,35 @@ function showUnlockHint() {
   hintTimer = setTimeout(() => setUnlockHint(false), UNLOCK_HINT_MS);
 }
 
+// The ring's fill and the unlock are driven by one animation-frame loop, so
+// they can't disagree: lifting the thumb stops the loop and empties the ring.
+// (A CSS transition kept sweeping to full on Android after release.)
+function holdFrameTick(now) {
+  const p = Math.min(1, (now - holdStart) / UNLOCK_HOLD_MS);
+  $('pocketRing').style.setProperty('--progress', p * 100);
+  if (p < 1) {
+    holdFrame = requestAnimationFrame(holdFrameTick);
+    return;
+  }
+  holdFrame = null;
+  exitPocket();
+}
+
+function startHold() {
+  clearTimeout(hintTimer);
+  holdStart = performance.now();
+  holdFrame = requestAnimationFrame(holdFrameTick);
+}
+
+function stopHold() {
+  if (holdFrame !== null) cancelAnimationFrame(holdFrame);
+  holdFrame = null;
+  $('pocketRing').style.setProperty('--progress', 0);
+}
+
 function cancelHold() {
-  if (!holdTimer) return;
-  clearTimeout(holdTimer);
-  holdTimer = null;
-  $('pocketRing').classList.remove('holding');
+  if (holdFrame === null) return;
+  stopHold();
   showUnlockHint();
 }
 
@@ -464,19 +488,11 @@ $('pocket').addEventListener('pointerdown', () => {
   // A touch is a user gesture, so it is also a good moment to retry a lock
   // the browser refused or dropped.
   requestWakeLock();
-  if (!holdTimer) showUnlockHint();
+  if (holdFrame === null) showUnlockHint();
 });
 $('pocket').addEventListener('contextmenu', e => e.preventDefault());
 
-$('pocketRing').addEventListener('pointerdown', () => {
-  clearTimeout(hintTimer);
-  const ring = $('pocketRing');
-  // Flush styles first so the sweep always has a starting point to animate
-  // from; without it, a circle shown in the same frame jumps straight to full.
-  void ring.offsetWidth;
-  ring.classList.add('holding');
-  holdTimer = setTimeout(() => { holdTimer = null; exitPocket(); }, UNLOCK_HOLD_MS);
-});
+$('pocketRing').addEventListener('pointerdown', startHold);
 ['pointerup', 'pointercancel', 'pointerleave'].forEach(type =>
   $('pocketRing').addEventListener(type, cancelHold));
 

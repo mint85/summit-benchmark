@@ -159,12 +159,8 @@ button.stop { background: var(--bad); border-color: var(--bad); color: #fff; }
   white-space: nowrap;
 }
 /* The unlock circle is a progress ring that sweeps around the edge, so it
-   stays visible around a thumb pressing the middle. */
-@property --progress {
-  syntax: '<number>';
-  inherits: false;
-  initial-value: 0;
-}
+   stays visible around a thumb pressing the middle. app.js sets --progress
+   (0 to 100) each frame while the ring is held. */
 .pocket-ring {
   --progress: 0;
   position: relative;
@@ -180,8 +176,6 @@ button.stop { background: var(--bad); border-color: var(--bad); color: #fff; }
   border-radius: 50%;
   background: #000;
 }
-/* Duration matches UNLOCK_HOLD_MS in app.js. */
-.pocket-ring.holding { --progress: 100; transition: --progress 2s linear; }
 
 .band {
   margin-top: 0.7rem;
