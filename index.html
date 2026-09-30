@@ -39,7 +39,10 @@
         <span id="logState" class="log-state">Not logging</span>
       </div>
       <div id="logDetail" class="log-detail">Saves a reading every 15 seconds while the app is open.</div>
-      <button id="logToggle" class="primary">Start logging</button>
+      <div class="cal-actions">
+        <button id="logToggle" class="primary">Start logging</button>
+        <button id="pocketBtn" hidden>Pocket mode</button>
+      </div>
       <div id="logMsg" class="cal-msg" role="status" aria-live="polite"></div>
     </section>
 
@@ -77,6 +80,15 @@
     <span id="offline-badge" class="badge" hidden>offline</span>
     <span id="sw-state">app shell not yet cached</span>
   </footer>
+
+  <!-- Pocket mode: black screen that keeps logging and ignores stray touches. -->
+  <div id="pocket" class="pocket" hidden>
+    <div id="pocketInfo" class="pocket-info"></div>
+    <div id="pocketUnlock" class="pocket-unlock" hidden>
+      <div id="pocketRing" class="pocket-ring"><div class="pocket-fill"></div></div>
+      <div>Hold the circle to unlock</div>
+    </div>
+  </div>
 
   <script src="db.js"></script>
   <script src="app.js"></script>

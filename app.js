@@ -280,6 +280,8 @@ function renderLog() {
     btn.textContent = 'Start logging';
     btn.className = 'primary';
   }
+  $('pocketBtn').hidden = !session;
+  renderPocket();
 }
 
 // Called on every fix. The throttle lives here, keyed on the fix's own
@@ -362,6 +364,118 @@ async function initLog() {
 }
 
 $('logToggle').addEventListener('click', toggleLog);
+
+// --- Pocket mode (keep-awake black screen for continuous logging) ---
+// A web app can't use GPS in the background: once the screen locks, the page
+// is suspended and logging pauses. Pocket mode holds a screen Wake Lock and
+// covers the app with a black overlay that swallows touches, so the phone can
+// ride in a pocket while still logging. On OLED screens black pixels are off,
+// so the cost is mostly GPS plus the awake processor, not the display.
+const UNLOCK_HOLD_MS = 2000;  // hold the circle this long to exit
+const UNLOCK_HINT_MS = 5000;  // how long the circle stays up after a touch
+const DRIFT_MS = 60000;       // move the dim text so it can't burn in
+
+let pocketOn = false;
+let wakeLock = null;          // WakeLockSentinel while held
+let wakeLockPending = false;
+let holdTimer = null;
+let hintTimer = null;
+let driftTimer = null;
+
+async function requestWakeLock() {
+  if (!('wakeLock' in navigator) || wakeLock || wakeLockPending) return;
+  if (document.visibilityState !== 'visible') return;
+  wakeLockPending = true;
+  try {
+    wakeLock = await navigator.wakeLock.request('screen');
+    // The browser releases the lock whenever the page is hidden.
+    wakeLock.addEventListener('release', () => { wakeLock = null; renderPocket(); });
+  } catch (err) {
+    console.warn('Wake lock refused:', err);
+  } finally {
+    wakeLockPending = false;
+    renderPocket();
+  }
+}
+
+function renderPocket() {
+  if (!pocketOn) return;
+  const elev = lastFix
+    ? Math.round(correctedM(lastFix.rawM) * M_TO_FT).toLocaleString() + ' ft'
+    : 'waiting for GPS';
+  // Say so if the lock failed: otherwise the screen would auto-lock in the
+  // pocket and silently pause logging.
+  const warn = wakeLock || wakeLockPending ? '' : '\nScreen may auto-lock. Tap to retry.';
+  $('pocketInfo').textContent = elev + ', ' + savedCount + ' saved' + warn;
+}
+
+function driftPocket() {
+  const x = Math.round((Math.random() - 0.5) * window.innerWidth * 0.5);
+  const y = Math.round((Math.random() - 0.5) * window.innerHeight * 0.4);
+  $('pocketInfo').style.transform = 'translate(' + x + 'px, ' + y + 'px)';
+}
+
+function enterPocket() {
+  if (!session) return;
+  pocketOn = true;
+  $('pocket').hidden = false;
+  $('pocketUnlock').hidden = true;
+  renderPocket();
+  driftPocket();
+  driftTimer = setInterval(driftPocket, DRIFT_MS);
+  requestWakeLock();
+}
+
+function exitPocket() {
+  pocketOn = false;
+  $('pocket').hidden = true;
+  $('pocketRing').classList.remove('holding');
+  clearTimeout(holdTimer);
+  clearTimeout(hintTimer);
+  clearInterval(driftTimer);
+  if (wakeLock) wakeLock.release().catch(() => {});
+  wakeLock = null;
+}
+
+// Two steps to unlock so pocket contact can't do it: any touch reveals the
+// circle for a few seconds, then the circle must be held for UNLOCK_HOLD_MS.
+function showUnlockHint() {
+  $('pocketUnlock').hidden = false;
+  clearTimeout(hintTimer);
+  hintTimer = setTimeout(() => { $('pocketUnlock').hidden = true; }, UNLOCK_HINT_MS);
+}
+
+function cancelHold() {
+  if (!holdTimer) return;
+  clearTimeout(holdTimer);
+  holdTimer = null;
+  $('pocketRing').classList.remove('holding');
+  showUnlockHint();
+}
+
+$('pocketBtn').addEventListener('click', enterPocket);
+
+$('pocket').addEventListener('pointerdown', () => {
+  // A touch is a user gesture, so it is also a good moment to retry a lock
+  // the browser refused or dropped.
+  requestWakeLock();
+  if (!holdTimer) showUnlockHint();
+});
+$('pocket').addEventListener('contextmenu', e => e.preventDefault());
+
+$('pocketRing').addEventListener('pointerdown', () => {
+  clearTimeout(hintTimer);
+  $('pocketRing').classList.add('holding');
+  holdTimer = setTimeout(() => { holdTimer = null; exitPocket(); }, UNLOCK_HOLD_MS);
+});
+['pointerup', 'pointercancel', 'pointerleave'].forEach(type =>
+  $('pocketRing').addEventListener(type, cancelHold));
+
+// Coming back to the app (after the side button or an app switch) needs a
+// fresh lock; the old one was released when the page was hidden.
+document.addEventListener('visibilitychange', () => {
+  if (pocketOn && document.visibilityState === 'visible') requestWakeLock();
+});
 
 // --- Calibration UI wiring ---
 $('calUsgs').addEventListener('click', calibrateUsgs);

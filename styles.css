@@ -106,6 +106,50 @@ button.primary { background: var(--accent); border-color: var(--accent); color: 
 .log-detail { font-size: 0.9rem; opacity: 0.75; margin: 0.3rem 0 0.7rem; font-variant-numeric: tabular-nums; }
 button.stop { background: var(--bad); border-color: var(--bad); color: #fff; }
 
+/* Pocket mode. Pure black in both color schemes: on an OLED screen black
+   pixels are switched off, so the lit screen costs almost nothing. */
+.pocket {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: #000;
+  color: #4a4a4a;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2.5rem;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+.pocket-info {
+  text-align: center;
+  font-size: 1.1rem;
+  font-variant-numeric: tabular-nums;
+  white-space: pre-line;
+  transition: transform 1s ease;
+}
+.pocket-unlock { text-align: center; font-size: 0.9rem; }
+.pocket-ring {
+  width: 88px; height: 88px;
+  margin: 0 auto 0.8rem;
+  border-radius: 50%;
+  border: 2px solid #4a4a4a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pocket-fill {
+  width: 100%; height: 100%;
+  border-radius: 50%;
+  background: #4a4a4a;
+  transform: scale(0);
+}
+/* Duration matches UNLOCK_HOLD_MS in app.js. */
+.pocket-ring.holding .pocket-fill { transform: scale(1); transition: transform 2s linear; }
+
 .band {
   margin-top: 0.7rem;
   padding: 0.5rem 0.8rem;
