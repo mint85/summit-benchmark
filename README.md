@@ -36,9 +36,17 @@ Built so far:
   in `localStorage` and one calibration holds across a region.
 - A coarse altitude-sickness band cue that flags the high, very high, and extreme
   bands as you climb.
+- An elevation log: start/stop sessions that save a reading every 15 seconds to
+  IndexedDB on the device. Each reading keeps the raw altitude plus the calibration
+  offset in effect, so a later recalibration loses nothing. A session left running
+  when the app is closed resumes on the next open.
 
-Still to come: logging each reading to IndexedDB with start/stop sessions, and
-charting a day's elevation with uPlot.
+Still to come: a keep-awake "pocket mode" for continuous logging, charting a
+session's elevation with uPlot, and JSON/CSV export and import.
+
+One platform limit worth knowing: a web app cannot use GPS in the background. When
+the screen locks or you switch apps, the phone suspends the page and logging pauses
+until you come back, so a session records the stretches when the app is open.
 
 ## Device compatibility test
 
@@ -87,9 +95,9 @@ altitude itself is fine, which is cosmetic only.)
 
 Vanilla JS, no framework, no build step. Static site on Netlify, which provides the
 HTTPS a PWA requires and lets us set cache headers (GitHub Pages would also work).
-The service worker handles offline use, and calibration state lives in `localStorage`.
-Still to add: IndexedDB for the elevation log and a small vendored charting library
-(uPlot) for the graphs.
+The service worker handles offline use, calibration state lives in `localStorage`,
+and the elevation log lives in IndexedDB (`db.js`, a small promise wrapper with no
+dependencies). Still to add: a small vendored charting library (uPlot) for the graphs.
 
 ---
 
