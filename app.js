@@ -419,7 +419,7 @@ function enterPocket() {
   if (!session) return;
   pocketOn = true;
   $('pocket').hidden = false;
-  $('pocketUnlock').hidden = true;
+  setUnlockHint(false);
   renderPocket();
   driftPocket();
   driftTimer = setInterval(driftPocket, DRIFT_MS);
@@ -439,10 +439,15 @@ function exitPocket() {
 
 // Two steps to unlock so pocket contact can't do it: any touch reveals the
 // circle for a few seconds, then the circle must be held for UNLOCK_HOLD_MS.
+function setUnlockHint(show) {
+  $('pocketUnlock').hidden = !show;
+  $('pocket').classList.toggle('hinting', show); // parks the reading up top
+}
+
 function showUnlockHint() {
-  $('pocketUnlock').hidden = false;
+  setUnlockHint(true);
   clearTimeout(hintTimer);
-  hintTimer = setTimeout(() => { $('pocketUnlock').hidden = true; }, UNLOCK_HINT_MS);
+  hintTimer = setTimeout(() => setUnlockHint(false), UNLOCK_HINT_MS);
 }
 
 function cancelHold() {
@@ -465,7 +470,11 @@ $('pocket').addEventListener('contextmenu', e => e.preventDefault());
 
 $('pocketRing').addEventListener('pointerdown', () => {
   clearTimeout(hintTimer);
-  $('pocketRing').classList.add('holding');
+  const ring = $('pocketRing');
+  // Flush styles first so the sweep always has a starting point to animate
+  // from; without it, a circle shown in the same frame jumps straight to full.
+  void ring.offsetWidth;
+  ring.classList.add('holding');
   holdTimer = setTimeout(() => { holdTimer = null; exitPocket(); }, UNLOCK_HOLD_MS);
 });
 ['pointerup', 'pointercancel', 'pointerleave'].forEach(type =>
