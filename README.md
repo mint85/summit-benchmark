@@ -6,8 +6,8 @@ signal.
 
 ## Why
 
-Planned for a trip to Yellowstone, Grand Teton, and Rocky Mountain National Parks.
-The immediate need is peace of mind about **altitude sickness**: a dead-simple,
+I built this app for my wife Nicole to use on our upcoming trip to Yellowstone, Grand Teton, and Rocky Mountain National Parks to celebrate our 5th Wedding Anniversary.
+The immediate need was peace of mind about **altitude sickness**: a dead-simple,
 always-available readout of "how high are we right now?" so we can correlate
 elevation with how we're feeling and decide when to head lower. The secondary goal
 is logging elevation across a day of exploring and charting it.
@@ -28,7 +28,7 @@ feature, which uses exactly that idea.
        alt="Allen and Nicole at Bear Lake in Rocky Mountain National Park, holding up a phone running Summit Benchmark that reads 9,454 ft">
 </p>
 
-The app came along and got real use. Nicole used it throughout the trip, and a quick
+The app got real use during our trip! Nicole and I used it throughout the trip, and a quick
 answer to "how high are we right now?" did what it was built for: it took some of
 the worry out of the altitude. We both felt the elevation and took things slowly, but
 made it to Bear Lake in Rocky Mountain National Park, the highest point we reached.
@@ -41,20 +41,20 @@ the dim readout, and the hold-to-unlock ring worked.
 
 ### The one real bug: stuck on the splash screen
 
-On the Galaxy S25 Ultra, the app sometimes stuck on its splash screen when the signal
+On the Galaxy S25 Ultra, the app sometimes got stuck on its splash screen when the signal
 was weak, while the iPhone always opened. The cause was in the service worker, which
-was network-first with no timeout. With no connection at all, a request fails right
+was network-first with no timeout built into the code. With no connection at all, a request fails right
 away and the app loads from its offline cache. A weak or flickering signal makes the
-request hang instead of fail, so the cached copy was never used. Our best explanation
+request hang instead of fail, so the cached copy was never used. The best explanation
 for why only the Android phone was affected is that iOS gives up on a marginal
-connection sooner.
+connection much earlier.
 
 The fix gives the network 5 seconds before serving the cached app, and once one
 request has timed out, the rest of the app loads from the cache without waiting
-again. We tested it in headless Chrome against a local server that accepts requests
+again. Tested it in headless Chrome against a local server that accepts requests
 and never answers, a stand-in for a weak signal. Before the fix the app never loaded;
 after it, the app shows in about 5 seconds. It still loads instantly when fully
-offline and still picks up a new deploy on the next open when online.
+offline and still automatically picks up a new deploy on the next open when online.
 
 ## Status
 
