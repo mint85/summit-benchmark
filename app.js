@@ -461,8 +461,9 @@ function holdFrameTick(now) {
     return;
   }
   holdFrame = null;
-  hapticTick();
+  // Unlock first, so the screen is back even if the haptic workaround fails.
   exitPocket();
+  hapticTick();
 }
 
 function startHold() {
