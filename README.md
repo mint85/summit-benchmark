@@ -6,7 +6,7 @@ signal.
 
 ## Why
 
-I built this app for my wife Nicole to use on our upcoming trip to Yellowstone, Grand Teton, and Rocky Mountain National Parks to celebrate our 5th Wedding Anniversary.
+I built this app for my wife Nicole to use on our trip to Yellowstone, Grand Teton, and Rocky Mountain National Parks to celebrate our 5th Wedding Anniversary.
 The immediate need was peace of mind about **altitude sickness**: a dead-simple,
 always-available readout of "how high are we right now?" so we can correlate
 elevation with how we're feeling and decide when to head lower. The secondary goal
@@ -58,7 +58,8 @@ offline and still automatically picks up a new deploy on the next open when onli
 
 ## Status
 
-Working PWA, deployed and installable at **https://summit-benchmark.netlify.app**.
+Working PWA, deployed and installable at **https://summit-benchmark.netlify.app**
+(see [Install](#install)).
 
 Built so far:
 
@@ -86,6 +87,42 @@ Built so far:
 
 Still to come: JSON/CSV export and import, then charting a session's elevation with
 uPlot.
+
+## Install
+
+Summit Benchmark is a progressive web app (PWA), so there is no app store needed. You install it from your
+phone's browser, which puts an icon on the home screen and lets it run offline. Do
+this once while you have a connection.
+
+### iPhone (Safari)
+
+1. Open **https://summit-benchmark.netlify.app** in Safari.
+2. Tap the **Share** button. Depending on your Safari tab layout, it may be inside
+   the **•••** menu.
+3. Scroll down and tap **Add to Home Screen**. If it is missing, tap **Edit Actions**
+   at the bottom of the list and add it.
+4. Make sure **Open as Web App** is on, then tap **Add**.
+
+### Android (Chrome)
+
+1. Open **https://summit-benchmark.netlify.app** in Chrome.
+2. Tap the **⋮** menu in the top right.
+3. Tap **Install and create shortcut** (labeled **Add to home screen** in some Chrome versions), then
+   confirm.
+
+Chrome may also show an install prompt on its own; accepting it does the same thing.
+
+### First run
+
+- **Open the app from the new home screen icon** while you still have a connection,
+  so the installed app saves its offline copy. Keep using the icon from then on. On
+  iPhone, the installed app and Safari keep separate storage, so your calibration and
+  logs live only in the one you use.
+- **Allow location access** when asked, and choose precise location if offered.
+  Approximate location is too coarse for elevation.
+- **Calibrate** for accurate sea-level readings: tap **Calibrate here (USGS)** when
+  you have a signal, or use **Enter known elevation** with a value from a trail sign
+  or map when you don't.
 
 ## Device compatibility test
 
