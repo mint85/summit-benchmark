@@ -21,6 +21,41 @@ The name nods to a surveying **benchmark**, a fixed point of known elevation (th
 kind literally set into mountain summits), and to the app's "calibrate here"
 feature, which uses exactly that idea.
 
+## On the trip (October 2026)
+
+<p align="center">
+  <img src="images/bear-lake.jpg" width="420"
+       alt="Allen and Nicole at Bear Lake in Rocky Mountain National Park, holding up a phone running Summit Benchmark that reads 9,454 ft">
+</p>
+
+The app came along and got real use. Nicole used it throughout the trip, and a quick
+answer to "how high are we right now?" did what it was built for: it took some of
+the worry out of the altitude. We both felt the elevation and took things slowly, but
+made it to Bear Lake in Rocky Mountain National Park, the highest point we reached.
+The app read **9,454 ft** there, and the National Park Service lists the Bear Lake
+trailhead at 9,475 ft, so it was within about 20 ft.
+
+We logged the drive up to Estes Park (that session is still on the phone, waiting for
+the export feature), and pocket mode worked on the iPhone: the screen stayed on with
+the dim readout, and the hold-to-unlock ring worked.
+
+### The one real bug: stuck on the splash screen
+
+On the Galaxy S25 Ultra, the app sometimes stuck on its splash screen when the signal
+was weak, while the iPhone always opened. The cause was in the service worker, which
+was network-first with no timeout. With no connection at all, a request fails right
+away and the app loads from its offline cache. A weak or flickering signal makes the
+request hang instead of fail, so the cached copy was never used. Our best explanation
+for why only the Android phone was affected is that iOS gives up on a marginal
+connection sooner.
+
+The fix gives the network 5 seconds before serving the cached app, and once one
+request has timed out, the rest of the app loads from the cache without waiting
+again. We tested it in headless Chrome against a local server that accepts requests
+and never answers, a stand-in for a weak signal. Before the fix the app never loaded;
+after it, the app shows in about 5 seconds. It still loads instantly when fully
+offline and still picks up a new deploy on the next open when online.
+
 ## Status
 
 Working PWA, deployed and installable at **https://summit-benchmark.netlify.app**.
@@ -28,7 +63,8 @@ Working PWA, deployed and installable at **https://summit-benchmark.netlify.app*
 Built so far:
 
 - App shell that installs to the home screen and runs offline (service worker,
-  network-first so a new deploy reaches installed devices without a stale-cache lag).
+  network-first so a new deploy reaches installed devices without a stale-cache lag,
+  with a 5 second timeout so a weak signal falls back to the cached app).
 - Live elevation readout from `navigator.geolocation.watchPosition()`, smoothed with
   a rolling median so it does not flicker while you stand still.
 - Sea-level calibration in two modes: a one-tap lookup against USGS ground truth
@@ -48,8 +84,8 @@ Built so far:
   Unlocking takes two steps (tap, then hold a circle for 2 seconds) so pocket
   contact cannot trigger it.
 
-Still to come: charting a session's elevation with uPlot, and JSON/CSV export and
-import.
+Still to come: JSON/CSV export and import, then charting a session's elevation with
+uPlot.
 
 ## Device compatibility test
 
